@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart LMS - Profile</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fb; }
+        .sidebar {
+            width: 230px; min-height: 100vh; background: #1e3c72;
+            color: white; position: fixed; padding: 20px;
+        }
+        .sidebar h2 { text-align: center; }
+        .sidebar a {
+            display: block; color: white; text-decoration: none;
+            padding: 13px 10px; margin: 5px 0; border-radius: 5px;
+        }
+        .sidebar a:hover { background: #2a5298; }
+        .main { margin-left: 230px; padding: 30px; }
+        .profile-card {
+            background: white; max-width: 600px; padding: 30px;
+            border-radius: 10px; box-shadow: 0 2px 8px #0001;
+        }
+        input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border: 1px solid #ccc; border-radius: 5px;
+        }
+        button {
+            background: #1e3c72; color: white; border: none;
+            padding: 12px 20px; border-radius: 5px; cursor: pointer;
+        }
+        button:hover { background: #2a5298; }
+        .photo {
+            width: 110px; height: 110px; border-radius: 50%;
+            object-fit: cover; background: #ddd; display: block;
+            margin-bottom: 15px;
+        }
+        @media(max-width: 650px) {
+            .sidebar { position: relative; width: 100%; min-height: auto; }
+            .main { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>SMART LMS</h2>
+    <a href="./dashboard.html">🏠 Dashboard</a>
+    <a href="./courses.html">📚 My Courses</a>
+    <a href="./assignments.html">📝 Assignments</a>
+    <a href="./quiz.html">📋 Online Quiz</a>
+    <a href="./progress.html">📊 My Progress</a>
+    <a href="./chatbot.html">🤖 AI Assistant</a>
+    <a href="./profile.html">👤 Profile</a>
+    <a href="./notifications.html">🔔 Notifications</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="main">
+    <h1>My Profile</h1>
+
+    <div class="profile-card">
+        <img id="photoPreview"
+             class="photo"
+             src="https://placehold.co/110x110?text=Photo"
+             alt="Profile photo">
+
+        <label>Upload Profile Photo</label>
+        <input type="file" id="photo" accept="image/*">
+
+        <form id="profileForm">
+            <label>Full Name</label>
+            <input type="text" id="name" required>
+
+            <label>Email Address</label>
+            <input type="email" id="email" placeholder="Enter email">
+
+            <label>Phone Number</label>
+            <input type="tel" id="phone" placeholder="Enter phone number">
+
+            <label>Course</label>
+            <input type="text" id="course" placeholder="Enter your course">
+
+            <button type="submit">Save Profile</button>
+        </form>
+
+        <p id="message"></p>
+    </div>
+</div>
+
+<script>
+let savedProfile = {};
+async function loadProfile() {
+    const response = await fetch("/api/profile");
+    if (response.status === 401) return location.replace("/");
+    savedProfile = (await response.json()).profile;
+    document.getElementById("name").value = savedProfile.username || "";
+    document.getElementById("email").value = savedProfile.email || "";
+    document.getElementById("phone").value = savedProfile.phone || "";
+    document.getElementById("course").value = savedProfile.course || "";
+    if (savedProfile.photo) document.getElementById("photoPreview").src = savedProfile.photo;
+}
+
+document.getElementById("photo").addEventListener("change", function() {
+    const file = this.files[0];
+
+    if (file) {
+        if (file.size > 1024 * 1024) {
+            alert("Please select an image smaller than 1 MB.");
+            this.value = "";
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+            document.getElementById("photoPreview").src = event.target.result;
+        };
+
+        reader.readAsDataURL(file);
+    }
+});
+
+document.getElementById("profileForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const profile = {name:document.getElementById("name").value, email:document.getElementById("email").value,
+        phone:document.getElementById("phone").value, course:document.getElementById("course").value,
+        photo:document.getElementById("photoPreview").src.includes("placehold.co") ? savedProfile.photo || "" : document.getElementById("photoPreview").src};
+    const response = await fetch("/api/profile", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(profile)});
+    const data = await response.json();
+    document.getElementById("message").textContent = response.ok ? "Profile updated successfully!" : (data.error || "Could not save profile.");
+    if (response.ok) savedProfile = data.profile;
+});
+async function logout() { await fetch("/api/logout", {method:"POST"}); location.replace("/"); }
+loadProfile();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,177 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart LMS - Admin Dashboard</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fb; }
+        .sidebar {
+            width: 230px; min-height: 100vh; background: #1e3c72;
+            color: white; position: fixed; padding: 20px;
+        }
+        .sidebar h2 { text-align: center; }
+        .sidebar a {
+            display: block; color: white; text-decoration: none;
+            padding: 13px 10px; margin: 5px 0; border-radius: 5px;
+        }
+        .sidebar a:hover { background: #2a5298; }
+        .main { margin-left: 230px; padding: 30px; }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+        }
+        .card {
+            background: white; padding: 20px; border-radius: 10px;
+            box-shadow: 0 2px 8px #0001;
+        }
+        .card h2 { color: #1e3c72; }
+        table {
+            width: 100%; border-collapse: collapse;
+            background: white; margin-top: 25px;
+        }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #1e3c72; color: white; }
+        button {
+            background: #1e3c72; color: white; border: none;
+            padding: 9px 13px; border-radius: 5px; cursor: pointer;
+        }
+        .delete { background: #dc3545; }
+        input {
+            padding: 10px; border: 1px solid #ccc;
+            border-radius: 5px; margin: 5px 0;
+        }
+        .panel {
+            background: white; padding: 20px; margin-top: 20px;
+            border-radius: 10px;
+        }
+        @media(max-width: 650px) {
+            .sidebar { position: relative; width: 100%; min-height: auto; }
+            .main { margin-left: 0; }
+            table { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>SMART LMS</h2>
+    <a href="./admin.html">🏠 Admin Dashboard</a>
+    <a href="./dashboard.html">👨‍🎓 Student Dashboard</a>
+    <a href="./courses.html">📚 Courses</a>
+    <a href="./notifications.html">🔔 Notifications</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="main">
+    <h1>Admin Dashboard</h1>
+    <p>Manage student records and view LMS statistics.</p>
+
+    <div class="cards">
+        <div class="card">
+            <h2 id="studentCount">0</h2>
+            <p>Registered Students</p>
+        </div>
+        <div class="card">
+            <h2 id="courseCount">6</h2>
+            <p>Available Courses</p>
+        </div>
+        <div class="card">
+            <h2 id="submissionCount">0</h2>
+            <p>Assignment Records</p>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Add Student</h2>
+        <form id="studentForm">
+            <input type="text" id="studentName" placeholder="Student Name" required>
+            <input type="email" id="studentEmail" placeholder="Student Email" required>
+            <button type="submit">Add Student</button>
+        </form>
+    </div>
+
+    <h2>Student Records</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="studentTable"></tbody>
+    </table>
+</div>
+
+<script>
+async function displayStudents() {
+    const response = await fetch("/api/admin/students");
+    if (response.status === 401 || response.status === 403) return location.replace("/");
+    const data = await response.json();
+    const students = data.students;
+    const table = document.getElementById("studentTable");
+
+    table.innerHTML = "";
+
+    students.forEach((student) => {
+        table.innerHTML += `
+            <tr>
+                <td>${escapeHTML(student.name)}</td>
+                <td>${escapeHTML(student.email)}</td>
+        <td>
+                    <button class="delete" onclick="deleteStudent(${student.id})">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    document.getElementById("studentCount").textContent = students.length;
+
+    document.getElementById("submissionCount").textContent = data.submissions;
+}
+
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(character) {
+        return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+        }[character];
+    });
+}
+
+document.getElementById("studentForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const student = {
+        name: document.getElementById("studentName").value.trim(),
+        email: document.getElementById("studentEmail").value.trim()
+    };
+    const response = await fetch("/api/admin/students", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(student)});
+    if (!response.ok) return alert("Could not add student.");
+
+    this.reset();
+    displayStudents();
+});
+
+async function deleteStudent(id) {
+    await fetch(`/api/admin/students/${id}`, {method:"DELETE"});
+    displayStudents();
+}
+
+async function logout() { await fetch("/api/logout", {method:"POST"}); location.replace("/"); }
+
+displayStudents();
+</script>
+
+</body>
+</html>

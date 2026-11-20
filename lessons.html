@@ -1,0 +1,127 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart LMS - Lessons</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fb; }
+        .sidebar {
+            width: 230px; min-height: 100vh; background: #1e3c72;
+            color: white; position: fixed; padding: 20px;
+        }
+        .sidebar h2 { text-align: center; }
+        .sidebar a {
+            display: block; color: white; text-decoration: none;
+            padding: 13px 10px; margin: 5px 0; border-radius: 5px;
+        }
+        .sidebar a:hover { background: #2a5298; }
+        .main { margin-left: 230px; padding: 30px; }
+        .lesson {
+            background: white; padding: 20px; margin: 15px 0;
+            border-radius: 10px; box-shadow: 0 2px 8px #0001;
+        }
+        button {
+            background: #1e3c72; color: white; border: none;
+            padding: 10px 15px; border-radius: 5px; cursor: pointer;
+        }
+        .video-frame { width: 100%; max-width: 760px; aspect-ratio: 16 / 9; border: 0; border-radius: 8px; background: #101820; }
+        .video-fallback { color: #526276; font-size: 14px; }
+        @media(max-width: 650px) {
+            .sidebar { position: relative; width: 100%; min-height: auto; }
+            .main { margin-left: 0; }
+            .video-frame { min-height: 210px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>SMART LMS</h2>
+    <a href="./dashboard.html">🏠 Dashboard</a>
+    <a href="./courses.html">📚 My Courses</a>
+    <a href="./assignments.html">📝 Assignments</a>
+    <a href="./quiz.html">📋 Online Quiz</a>
+    <a href="./progress.html">📊 My Progress</a>
+    <a href="./chatbot.html">🤖 AI Assistant</a>
+    <a href="./profile.html">👤 Profile</a>
+    <a href="./notifications.html">🔔 Notifications</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="main">
+    <h1>Course Lessons</h1>
+    <p>Watch the lessons and mark them as completed.</p>
+
+    <div id="lessonList"></div>
+    <p id="progressText"></p>
+</div>
+
+<script>
+const lessons = [
+    {
+        id: 1,
+        title: "Lesson 1 - Introduction",
+        video: "https://www.youtube-nocookie.com/embed/qz0aGYrrlhU?rel=0"
+    },
+    {
+        id: 2,
+        title: "Lesson 2 - Basic Concepts",
+        video: "https://www.youtube-nocookie.com/embed/HD13eq_Pmp8?rel=0"
+    },
+    {
+        id: 3,
+        title: "Lesson 3 - Practical Examples",
+        video: "https://www.youtube-nocookie.com/embed/UB1O30fR-EE?rel=0"
+    }
+];
+
+let completedLessons = [];
+
+function displayLessons() {
+    const list = document.getElementById("lessonList");
+    const completed = completedLessons;
+
+    list.innerHTML = "";
+
+    lessons.forEach(lesson => {
+        const isCompleted = completed.includes(lesson.id);
+
+        list.innerHTML += `
+            <div class="lesson">
+                <h3>${lesson.title}</h3>
+                <iframe class="video-frame" src="${lesson.video}" title="${lesson.title}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                <p class="video-fallback">If playback is blocked, <a href="https://www.youtube.com/watch?v=${lesson.video.split("/").pop().split("?")[0]}" target="_blank" rel="noopener">open this lesson on YouTube</a>.</p>
+                <p>Status: ${isCompleted ? "Completed ✅" : "Not completed"}</p>
+                <button onclick="markCompleted(${lesson.id})"
+                    ${isCompleted ? "disabled" : ""}>
+                    ${isCompleted ? "Completed" : "Mark as Completed"}
+                </button>
+            </div>
+        `;
+    });
+
+    document.getElementById("progressText").textContent =
+        "Completed " + completed.length + " of " + lessons.length + " lessons.";
+}
+
+async function markCompleted(id) {
+    const response = await fetch(`/api/lessons/${id}/complete`, {method:"POST"});
+    if (response.status === 401) return location.replace("/");
+    await loadLessons();
+}
+
+async function loadLessons() {
+    const response = await fetch("/api/lessons");
+    if (response.status === 401) return location.replace("/");
+    completedLessons = (await response.json()).completed;
+    displayLessons();
+}
+async function logout() { await fetch("/api/logout", {method:"POST"}); location.replace("/"); }
+loadLessons();
+</script>
+
+</body>
+</html>

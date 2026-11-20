@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart LMS - AI Assistant</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fb; }
+        .sidebar {
+            width: 230px; min-height: 100vh; background: #1e3c72;
+            color: white; position: fixed; padding: 20px;
+        }
+        .sidebar h2 { text-align: center; }
+        .sidebar a {
+            display: block; color: white; text-decoration: none;
+            padding: 13px 10px; margin: 5px 0; border-radius: 5px;
+        }
+        .sidebar a:hover { background: #2a5298; }
+        .main { margin-left: 230px; padding: 30px; }
+        .chat-box {
+            max-width: 750px; height: 400px; background: white;
+            border-radius: 10px; padding: 20px; overflow-y: auto;
+            box-shadow: 0 2px 8px #0001;
+        }
+        .message { padding: 10px; margin: 10px 0; border-radius: 8px; }
+        .user { background: #dce8ff; text-align: right; }
+        .bot { background: #e8f5e9; }
+        .input-area { display: flex; max-width: 750px; margin-top: 15px; gap: 10px; }
+        input {
+            flex: 1; padding: 12px; border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: #1e3c72; color: white; border: none;
+            padding: 12px 20px; border-radius: 5px; cursor: pointer;
+        }
+        @media(max-width: 650px) {
+            .sidebar { position: relative; width: 100%; min-height: auto; }
+            .main { margin-left: 0; }
+            .input-area { flex-wrap: wrap; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>SMART LMS</h2>
+    <a href="./dashboard.html">🏠 Dashboard</a>
+    <a href="./courses.html">📚 My Courses</a>
+    <a href="./assignments.html">📝 Assignments</a>
+    <a href="./quiz.html">📋 Online Quiz</a>
+    <a href="./progress.html">📊 My Progress</a>
+    <a href="./chatbot.html">🤖 AI Assistant</a>
+    <a href="./profile.html">👤 Profile</a>
+    <a href="./notifications.html">🔔 Notifications</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="main">
+    <h1>🤖 Learning Assistant</h1>
+    <p>Ask questions about your learning.</p>
+
+    <div class="chat-box" id="chatBox">
+        <div class="message bot">
+            Hello! Welcome to Smart LMS. How can I help you?
+        </div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Type your question..."
+            onkeydown="if(event.key === 'Enter') sendMessage()">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+function addMessage(message, type) {
+    const chatBox = document.getElementById("chatBox");
+    const div = document.createElement("div");
+
+    div.className = "message " + type;
+    div.textContent = message;
+
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function getBotReply(message) {
+    const text = message.toLowerCase();
+
+    if (text.includes("hello") || text.includes("hi")) return "Hello! How can I help with your studies?";
+    if (text.includes("course")) return "Open My Courses to explore and enroll in available courses.";
+    if (text.includes("quiz")) return "Open Online Quiz to test your knowledge.";
+    if (text.includes("assignment")) return "Visit Assignments to record your assignment submission.";
+    if (text.includes("progress")) return "Open My Progress to view your learning activity.";
+    if (text.includes("html")) return "HTML stands for HyperText Markup Language. It structures webpages.";
+    if (text.includes("css")) return "CSS styles webpages with colors, layouts and fonts.";
+    if (text.includes("javascript")) return "JavaScript adds interaction and dynamic behavior to webpages.";
+    return "Try asking about courses, HTML, CSS, JavaScript, quizzes or assignments.";
+}
+
+async function sendMessage() {
+    const input = document.getElementById("userInput");
+    const message = input.value.trim();
+
+    if (message === "") return;
+
+    addMessage(message, "user");
+    input.value = "";
+
+    const response = await fetch("/api/chat", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({message})});
+    if (response.status === 401) return location.replace("/");
+    const reply = (await response.json()).reply;
+    addMessage(reply, "bot");
+}
+async function loadChat() {
+    const response = await fetch("/api/chat");
+    if (response.status === 401) return location.replace("/");
+    const messages = (await response.json()).messages;
+    if (messages.length) {
+        document.getElementById("chatBox").innerHTML = "";
+        messages.forEach(item => addMessage(item.message, item.sender === "You" ? "user" : "bot"));
+    }
+}
+async function logout() { await fetch("/api/logout", {method:"POST"}); location.replace("/"); }
+loadChat();
+</script>
+
+</body>
+</html>

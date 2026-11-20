@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart LMS - Notifications</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fb; }
+        .sidebar {
+            width: 230px; min-height: 100vh; background: #1e3c72;
+            color: white; position: fixed; padding: 20px;
+        }
+        .sidebar h2 { text-align: center; }
+        .sidebar a {
+            display: block; color: white; text-decoration: none;
+            padding: 13px 10px; margin: 5px 0; border-radius: 5px;
+        }
+        .sidebar a:hover { background: #2a5298; }
+        .main { margin-left: 230px; padding: 30px; }
+        .notification {
+            background: white; padding: 20px; margin: 15px 0;
+            border-radius: 10px; box-shadow: 0 2px 8px #0001;
+            border-left: 5px solid #1e3c72;
+        }
+        .read { opacity: 0.6; border-left-color: #999; }
+        button {
+            background: #1e3c72; color: white; border: none;
+            padding: 10px 15px; border-radius: 5px; cursor: pointer;
+        }
+        button:hover { background: #2a5298; }
+        @media(max-width: 650px) {
+            .sidebar { position: relative; width: 100%; min-height: auto; }
+            .main { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>SMART LMS</h2>
+    <a href="./dashboard.html">🏠 Dashboard</a>
+    <a href="./courses.html">📚 My Courses</a>
+    <a href="./assignments.html">📝 Assignments</a>
+    <a href="./quiz.html">📋 Online Quiz</a>
+    <a href="./progress.html">📊 My Progress</a>
+    <a href="./chatbot.html">🤖 AI Assistant</a>
+    <a href="./profile.html">👤 Profile</a>
+    <a href="./notifications.html">🔔 Notifications</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="main">
+    <h1>Notifications</h1>
+    <p>Check your latest learning announcements.</p>
+
+    <div id="notificationList"></div>
+</div>
+
+<script>
+let notifications = [];
+
+const readNotifications = [];
+
+function displayNotifications() {
+    const list = document.getElementById("notificationList");
+    const read = readNotifications;
+
+    list.innerHTML = "";
+
+    notifications.forEach(item => {
+        const isRead = read.includes(item.id);
+
+        list.innerHTML += `
+            <div class="notification ${isRead ? "read" : ""}">
+                <h3>${item.title}</h3>
+                <p>${item.message}</p>
+                <small>${item.date}</small><br><br>
+                <button onclick="markRead(${item.id})"
+                    ${isRead ? "disabled" : ""}>
+                    ${isRead ? "Read" : "Mark as Read"}
+                </button>
+            </div>
+        `;
+    });
+}
+
+function markRead(id) { if (!readNotifications.includes(id)) readNotifications.push(id); displayNotifications(); }
+
+async function logout() { await fetch("/api/logout", {method:"POST"}); location.replace("/"); }
+
+async function loadNotifications() {
+    const response = await fetch("/api/notifications");
+    if (response.status === 401) return location.replace("/");
+    notifications = (await response.json()).notifications.map(item => ({id:item.id,title:"Learning update",message:item.message,date:item.createdAt}));
+    displayNotifications();
+}
+loadNotifications();
+</script>
+
+</body>
+</html>

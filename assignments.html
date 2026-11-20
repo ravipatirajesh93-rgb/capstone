@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart LMS - Assignments</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fb; }
+        .sidebar {
+            width: 230px; min-height: 100vh; background: #1e3c72;
+            color: white; position: fixed; padding: 20px;
+        }
+        .sidebar h2 { text-align: center; }
+        .sidebar a {
+            display: block; color: white; text-decoration: none;
+            padding: 13px 10px; margin: 5px 0; border-radius: 5px;
+        }
+        .sidebar a:hover { background: #2a5298; }
+        .main { margin-left: 230px; padding: 30px; }
+        .assignment {
+            background: white; padding: 20px; margin: 15px 0;
+            border-radius: 10px; box-shadow: 0 2px 8px #0001;
+        }
+        button {
+            background: #1e3c72; color: white; border: none;
+            padding: 10px 15px; border-radius: 5px; cursor: pointer;
+        }
+        input { margin: 10px 0; }
+        @media(max-width: 650px) {
+            .sidebar { position: relative; width: 100%; min-height: auto; }
+            .main { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>SMART LMS</h2>
+    <a href="./dashboard.html">🏠 Dashboard</a>
+    <a href="./courses.html">📚 My Courses</a>
+    <a href="./assignments.html">📝 Assignments</a>
+    <a href="./quiz.html">📋 Online Quiz</a>
+    <a href="./progress.html">📊 My Progress</a>
+    <a href="./chatbot.html">🤖 AI Assistant</a>
+    <a href="./profile.html">👤 Profile</a>
+    <a href="./notifications.html">🔔 Notifications</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="main">
+    <h1>My Assignments</h1>
+    <p>Select a file and submit your assignment.</p>
+
+    <div class="assignment">
+        <h3>Assignment 1 - HTML Basics</h3>
+        <p>Prepare a simple webpage using HTML.</p>
+        <input type="file" id="file1">
+        <button onclick="submitAssignment(1)">Submit Assignment</button>
+        <p id="status1">Not submitted</p>
+    </div>
+
+    <div class="assignment">
+        <h3>Assignment 2 - CSS Design</h3>
+        <p>Create a webpage using CSS styling.</p>
+        <input type="file" id="file2">
+        <button onclick="submitAssignment(2)">Submit Assignment</button>
+        <p id="status2">Not submitted</p>
+    </div>
+
+    <div class="assignment">
+        <h3>Assignment 3 - JavaScript</h3>
+        <p>Create a simple interactive webpage.</p>
+        <input type="file" id="file3">
+        <button onclick="submitAssignment(3)">Submit Assignment</button>
+        <p id="status3">Not submitted</p>
+    </div>
+</div>
+
+<script>
+async function submitAssignment(id) {
+    const fileInput = document.getElementById("file" + id);
+
+    if (!fileInput.files.length) {
+        alert("Please select a file first.");
+        return;
+    }
+
+    const fileName = fileInput.files[0].name;
+    const response = await fetch(`/api/assignments/${id}`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({filename:fileName})});
+    if (response.status === 401) return location.replace("/");
+    if (!response.ok) return alert("Could not record this submission.");
+    document.getElementById("status" + id).textContent =
+        "Submitted: " + fileName;
+
+    alert("Assignment submission recorded!");
+}
+
+async function loadSubmissions() {
+    const response = await fetch("/api/assignments");
+    if (response.status === 401) return location.replace("/");
+    (await response.json()).submissions.forEach(item => {
+        const status = document.getElementById("status" + item.id);
+        if (status) status.textContent = "Submitted: " + item.fileName;
+    });
+}
+
+async function logout() { await fetch("/api/logout", {method:"POST"}); location.replace("/"); }
+
+loadSubmissions();
+</script>
+
+</body>
+</html>

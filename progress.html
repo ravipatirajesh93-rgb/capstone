@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart LMS - My Progress</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #f4f6fb; }
+        .sidebar {
+            width: 230px; min-height: 100vh; background: #1e3c72;
+            color: white; position: fixed; padding: 20px;
+        }
+        .sidebar h2 { text-align: center; }
+        .sidebar a {
+            display: block; color: white; text-decoration: none;
+            padding: 13px 10px; margin: 5px 0; border-radius: 5px;
+        }
+        .sidebar a:hover { background: #2a5298; }
+        .main { margin-left: 230px; padding: 30px; }
+        .card {
+            background: white; padding: 25px; margin: 20px 0;
+            border-radius: 10px; box-shadow: 0 2px 8px #0001;
+        }
+        .progress-bar {
+            width: 100%; height: 20px; background: #ddd;
+            border-radius: 20px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; width: 0%; background: #2a9d8f;
+            transition: width 0.4s;
+        }
+        @media(max-width: 650px) {
+            .sidebar { position: relative; width: 100%; min-height: auto; }
+            .main { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>SMART LMS</h2>
+    <a href="./dashboard.html">🏠 Dashboard</a>
+    <a href="./courses.html">📚 My Courses</a>
+    <a href="./assignments.html">📝 Assignments</a>
+    <a href="./quiz.html">📋 Online Quiz</a>
+    <a href="./progress.html">📊 My Progress</a>
+    <a href="./chatbot.html">🤖 AI Assistant</a>
+    <a href="./profile.html">👤 Profile</a>
+    <a href="./notifications.html">🔔 Notifications</a>
+    <a href="#" onclick="logout()">🚪 Logout</a>
+</div>
+
+<div class="main">
+    <h1>My Learning Progress</h1>
+
+    <div class="card">
+        <h2>Course Progress</h2>
+        <p>Enrolled Courses: <strong id="courses">0</strong></p>
+        <p>Completed Lessons: <strong id="lessons">0</strong></p>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <h3 id="percentage">0% Completed</h3>
+    </div>
+
+    <div class="card">
+        <h2>Quiz Performance</h2>
+        <p>Best Quiz Score: <strong id="score">0 / 5</strong></p>
+    </div>
+
+    <div class="card">
+        <h2>Assignment Status</h2>
+        <p>Submitted Assignments: <strong id="assignments">0</strong></p>
+    </div>
+</div>
+
+<script>
+async function loadProgress() {
+    const response = await fetch("/api/dashboard");
+    if (response.status === 401) return location.replace("/");
+    const stats = await response.json();
+    const percentage = Math.min(100, Math.round(stats.completed / 3 * 100));
+    document.getElementById("courses").textContent = stats.enrolled;
+    document.getElementById("lessons").textContent = stats.completed;
+    document.getElementById("assignments").textContent = stats.submissions;
+    document.getElementById("score").textContent = stats.best_score + " / 5";
+    document.getElementById("progressFill").style.width = percentage + "%";
+    document.getElementById("percentage").textContent = percentage + "% Completed";
+}
+async function logout() { await fetch("/api/logout", {method:"POST"}); location.replace("/"); }
+loadProgress();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart LMS - Login</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: radial-gradient(circle at 15% 15%, #1c3a63, transparent 38%), linear-gradient(135deg, #0d1726, #172c48);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-box {
+            background: white;
+            width: min(420px, calc(100vw - 32px));
+            padding: 38px;
+            border-radius: 18px;
+            box-shadow: 0 24px 70px #0005;
+            text-align: center;
+        }
+        h1 { color: #142b48; margin-bottom: 6px; letter-spacing: -.04em; }
+        .eyebrow { color: #527397; font-size: 12px; font-weight: 700; letter-spacing: .15em; }
+        p { color: #64748b; }
+        input, select, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #dbe3ed;
+            border-radius: 9px;
+            background: #fbfdff;
+        }
+        button {
+            background: #176b58;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover { background: #10523f; }
+        #message { color: #b42318; min-height: 20px; }
+        .switch { color: #176b58; cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="login-box">
+    <span class="eyebrow">SMART LEARNING</span>
+    <h1 id="formTitle">Welcome back</h1>
+    <p id="formHint">Sign in to continue your learning journey.</p>
+
+    <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" autocomplete="username" required>
+        <input type="password" id="password" placeholder="Password (at least 6 characters)" autocomplete="current-password" required minlength="6">
+
+        <select id="role">
+            <option value="Student">Student</option>
+        </select>
+
+        <button type="submit" id="submitButton">Sign in</button>
+        <p id="message"></p>
+        <p><span id="toggleText">New to Smart LMS?</span> <a class="switch" id="toggleMode" href="#">Create an account</a></p>
+    </form>
+</div>
+
+<script>
+let registering = false;
+document.getElementById("toggleMode").addEventListener("click", function(event) {
+    event.preventDefault();
+    registering = !registering;
+    document.getElementById("formTitle").textContent = registering ? "Create your account" : "Welcome back";
+    document.getElementById("formHint").textContent = registering ? "Get started with your learning journey." : "Sign in to continue your learning journey.";
+    document.getElementById("submitButton").textContent = registering ? "Create account" : "Sign in";
+    document.getElementById("toggleText").textContent = registering ? "Already have an account?" : "New to Smart LMS?";
+    document.getElementById("toggleMode").textContent = registering ? "Sign in" : "Create an account";
+    document.getElementById("password").autocomplete = registering ? "new-password" : "current-password";
+});
+document.getElementById("loginForm").addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    const role = document.getElementById("role").value;
+
+    const message = document.getElementById("message");
+    const button = document.getElementById("submitButton");
+    button.disabled = true;
+    message.textContent = "";
+    try {
+        const response = await fetch(registering ? "/api/register" : "/api/login", {
+            method: "POST", headers: {"Content-Type":"application/json"},
+            body: JSON.stringify({username, password, role})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to sign in.");
+        window.location.href = data.user.role === "Admin" ? "/admin.html" : "/dashboard.html";
+    } catch (error) {
+        message.textContent = error.message || "Could not connect to the server.";
+    } finally {
+        button.disabled = false;
+    }
+});
+</script>
+
+</body>
+</html>
